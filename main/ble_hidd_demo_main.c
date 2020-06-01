@@ -516,8 +516,7 @@ void uart_parse_command (uint8_t character, struct cmdBuf * cmdBuffer)
 void uart_console(void *pvParameters)
 {
     char character;
-	hid_cmd_t mouseCmd;
-	hid_cmd_t keyboardCmd;
+    struct cmdBuf cmdBuffer;
     
     //Install UART driver, and get the queue.
     uart_driver_install(CONSOLE_UART_NUM, UART_FIFO_LEN * 2, UART_FIFO_LEN * 2, 0, NULL, 0);
@@ -528,63 +527,7 @@ void uart_console(void *pvParameters)
     {
         // read single byte
         uart_read_bytes(CONSOLE_UART_NUM, (uint8_t*) &character, 1, portMAX_DELAY);
-		// uart_parse_command(character, &cmdBuffer);	      	
-
-		if(halBLEIsConnected() == 0) {
-			ESP_LOGI(CONSOLE_UART_TAG,"Not connected, ignoring '%c'", character);
-		} else {
-			//Do not send anything if queues are uninitialized
-			if(hid_ble == NULL)
-			{
-				ESP_LOGE(CONSOLE_UART_TAG,"queues not initialized");
-				continue;
-			}
-			switch (character){
-				case 'a':
-					mouseCmd.cmd[0] = 0x10;
-					mouseCmd.cmd[1] = -MOUSE_SPEED;
-					xQueueSend(hid_ble,(void *)&mouseCmd, (TickType_t) 0);
-					ESP_LOGI(CONSOLE_UART_TAG,"mouse: a");
-					break;
-				case 's':
-					mouseCmd.cmd[0] = 0x11;
-					mouseCmd.cmd[1] = MOUSE_SPEED;
-					xQueueSend(hid_ble,(void *)&mouseCmd, (TickType_t) 0);
-					ESP_LOGI(CONSOLE_UART_TAG,"mouse: s");
-					break;
-				case 'd':
-					mouseCmd.cmd[0] = 0x10;
-					mouseCmd.cmd[1] = MOUSE_SPEED;
-					xQueueSend(hid_ble,(void *)&mouseCmd, (TickType_t) 0);
-					ESP_LOGI(CONSOLE_UART_TAG,"mouse: d");
-					break;
-				case 'w':
-					mouseCmd.cmd[0] = 0x11;
-					mouseCmd.cmd[1] = -MOUSE_SPEED;
-					xQueueSend(hid_ble,(void *)&mouseCmd, (TickType_t) 0);
-					ESP_LOGI(CONSOLE_UART_TAG,"mouse: w");
-					break;
-				case 'l':
-					mouseCmd.cmd[0] = 0x13;
-					xQueueSend(hid_ble,(void *)&mouseCmd, (TickType_t) 0);
-					ESP_LOGI(CONSOLE_UART_TAG,"mouse: l");
-					break;
-				case 'r':
-					mouseCmd.cmd[0] = 0x14;
-					xQueueSend(hid_ble,(void *)&mouseCmd, (TickType_t) 0);
-					ESP_LOGI(CONSOLE_UART_TAG,"mouse: r");
-					break;
-				case 'q':
-					ESP_LOGI(CONSOLE_UART_TAG,"received q: sending key y for test purposes");
-					keyboardCmd.cmd[0] = 0x20;
-					keyboardCmd.cmd[1] = 28;
-					xQueueSend(hid_ble,(void *)&keyboardCmd, (TickType_t) 0);
-					break;
-				default:
-					ESP_LOGI(CONSOLE_UART_TAG,"received: %d",character);
-					break;
-			}
-		}
+	uart_parse_command(character, &cmdBuffer);
     }
 }
 
